@@ -1,5 +1,8 @@
 # TODO - Energy Grid RPT Demo
 
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Public demo for customer presentations and educational content
+
 ## Completed ✅
 
 - [x] CAP project scaffolding

@@ -1,4 +1,7 @@
-# Architecture Redesign: Dynamic CSV Upload & RPT Comparison
+# Energy Grid RPT - Architecture Redesign
+
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Public demo for customer presentations and educational content
 
 ## Overview
 

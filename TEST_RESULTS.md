@@ -1,5 +1,8 @@
 # ✅ IMPLEMENTATION COMPLETE - Test Results
 
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Public demo for customer presentations and educational content
+
 ## Summary
 
 The RPT comparison architecture has been **successfully implemented and tested**. The system demonstrates how RPT's pattern recognition compares to simple statistical methods on variable vs. stable datasets.

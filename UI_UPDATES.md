@@ -1,5 +1,8 @@
 # ✅ UI UPDATED - Comparison View Complete
 
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Public demo for customer presentations and educational content
+
 ## What Was Added to Existing UI
 
 Your existing Control Center UI (with the scenario buttons you liked) has been **enhanced** with comparison functionality:

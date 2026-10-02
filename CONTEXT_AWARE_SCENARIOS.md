@@ -1,5 +1,7 @@
 # ✅ CONTEXT-AWARE SCENARIOS IMPLEMENTED
 
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt
+
 ## Problem Identified
 
 When using **Canary Islands dataset** with the original scenario buttons (designed for Germany's variable climate), the scenarios returned **INSUFFICIENT_DATA** because:

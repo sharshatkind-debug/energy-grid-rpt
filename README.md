@@ -2,6 +2,9 @@
 
 A CAP application demonstrating **how SAP RPT (Relational Pretrained Transformer)** works by comparing it against simple statistical methods on variable vs. stable datasets.
 
+> **🌐 Public Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Customer presentations, demos, and educational content
+
 ## Overview
 
 This application showcases the difference between:
@@ -366,6 +369,6 @@ Result: RPT detects rare pattern that simple averaging misses
 - [SAP AI Core Documentation](https://help.sap.com/docs/sap-ai-core)
 - [SAP RPT Getting Started Guide](https://community.sap.com/t5/artificial-intelligence-blogs-posts/sap-rpt-1-5-a-step-by-step-guide-on-getting-started/ba-p/14290171)
 
-## License
+## License & Usage
 
-SAP Internal Use
+**Public Educational Demo** - This application is designed for customer presentations, blog posts, and educational demonstrations of SAP RPT capabilities.

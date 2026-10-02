@@ -1,5 +1,8 @@
 # Implementation Summary: RPT Comparison Architecture
 
+> **🌐 Repository**: https://github.com/sharshatkind-debug/energy-grid-rpt  
+> **📝 Purpose**: Public demo for customer presentations and educational content
+
 ## What Was Implemented
 
 ### 1. Realistic Dataset Generation ✅
