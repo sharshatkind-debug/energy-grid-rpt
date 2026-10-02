@@ -1,0 +1,18 @@
+---
+applications:
+  - name: energy-grid-rpt
+    memory: 256M
+    disk_quota: 512M
+    instances: 1
+    buildpacks:
+      - nodejs_buildpack
+    command: npm start
+    random-route: true
+    env:
+      NODE_ENV: production
+      # AI Core credentials - set these after deployment:
+      # cf set-env energy-grid-rpt AI_CORE_CLIENT_ID "..."
+      # cf set-env energy-grid-rpt AI_CORE_CLIENT_SECRET "..."
+      # cf set-env energy-grid-rpt AI_CORE_TOKEN_URL "..."
+      # cf set-env energy-grid-rpt AI_CORE_API_URL "..."
+      # cf set-env energy-grid-rpt RPT_DEPLOYMENT_URL "..."

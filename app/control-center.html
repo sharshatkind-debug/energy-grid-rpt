@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Grid Control Center - SAP RPT Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sap-color-brand: #0a6ed1;
+            --sap-color-success: #107e3e;
+            --sap-color-warning: #e9730c;
+            --sap-color-critical: #bb0000;
+            --sap-color-neutral: #6a6d70;
+            --sap-color-background: #f7f7f7;
+            --sap-color-card: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: '72', 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background: var(--sap-color-background);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--sap-color-brand), #085cad);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header .status-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            background: var(--sap-color-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            color: var(--sap-color-neutral);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--sap-color-neutral);
+            font-size: 0.875rem;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-value.success { color: var(--sap-color-success); }
+        .metric-value.warning { color: var(--sap-color-warning); }
+        .metric-value.critical { color: var(--sap-color-critical); }
+
+        .weather-control {
+            margin-bottom: 1rem;
+        }
+
+        .weather-control label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--sap-color-neutral);
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-control input[type="range"] {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+
+        .weather-control .value-display {
+            text-align: right;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .prediction-panel {
+            grid-column: 1 / -1;
+        }
+
+        .prediction-result {
+            display: none;
+            margin-top: 1rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background: #f0f7ff;
+        }
+
+        .prediction-result.visible {
+            display: block;
+        }
+
+        .prediction-result.buy {
+            background: #fff3e0;
+            border-left: 4px solid var(--sap-color-warning);
+        }
+
+        .prediction-result.no-action {
+            background: #e8f5e9;
+            border-left: 4px solid var(--sap-color-success);
+        }
+
+        .prediction-result h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-result .confidence {
+            font-size: 0.875rem;
+            color: var(--sap-color-neutral);
+            margin-bottom: 1rem;
+        }
+
+        .prediction-result .justification {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #333;
+            padding: 1rem;
+            background: rgba(255,255,255,0.7);
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--sap-color-brand);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #085cad;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .power-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .power-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .power-bar-fill.solar { background: #ffc107; }
+        .power-bar-fill.wind { background: #2196f3; }
+        .power-bar-fill.gas { background: #ff5722; }
+
+        .plant-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .plant-status.online { background: #e8f5e9; color: var(--sap-color-success); }
+        .plant-status.maintenance { background: #fff3e0; color: var(--sap-color-warning); }
+        .plant-status.offline { background: #ffebee; color: var(--sap-color-critical); }
+
+        .scenario-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .scenario-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .scenario-btn:hover {
+            border-color: var(--sap-color-brand);
+            color: var(--sap-color-brand);
+        }
+
+        .scenario-btn.active {
+            background: var(--sap-color-brand);
+            color: white;
+            border-color: var(--sap-color-brand);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="header">
+        <div>
+            <h1>⚡ Energy Grid Control Center</h1>
+            <p style="opacity: 0.8; margin-top: 0.25rem;">SAP RPT 1.6 Comparison Demo</p>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="text-align: right;">
+                <div style="font-size: 0.75rem; opacity: 0.8;">Active Dataset</div>
+                <div id="activeDatasetName" style="font-weight: 600;">Loading...</div>
+                <div style="font-size: 0.75rem; opacity: 0.8;">Variability: <span id="variabilityScore">-</span>/10</div>
+            </div>
+            <div class="status-badge" id="gridStatusBadge">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <!-- Dataset Selector -->
+    <div class="card" style="margin-bottom: 1rem;">
+        <h2>🌍 Dataset Selection</h2>
+        <p style="color: var(--sap-color-neutral); margin-bottom: 1rem; font-size: 0.9rem;">
+            Switch between datasets to see how RPT performs on variable vs. stable conditions
+        </p>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="germanyBtn" onclick="activateDataset('germany')" style="flex: 1; min-width: 200px;">
+                🇩🇪 Germany (Variable)<br>
+                <span style="font-size: 0.8rem; opacity: 0.9;">Variability: 3.8/10</span>
+            </button>
+            <button class="btn btn-primary" id="canaryBtn" onclick="activateDataset('canary')" style="flex: 1; min-width: 200px;">
+                🇮🇨 Canary Islands (Stable)<br>
+                <span style="font-size: 0.8rem; opacity: 0.9;">Variability: 0.8/10</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Dataset Variability Chart -->
+        <div class="card" style="grid-column: span 2;">
+            <h2>📈 Dataset Weather Patterns (365 Days)</h2>
+            <p style="color: var(--sap-color-neutral); font-size: 0.85rem; margin-bottom: 1rem;">
+                Visualization showing daily weather variations across the year
+            </p>
+            <canvas id="weatherChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Current Grid Status -->
+        <div class="card">
+            <h2>📊 Current Grid Status</h2>
+            <div class="metric">
+                <span class="metric-label">Total Generation</span>
+                <span class="metric-value" id="totalGeneration">-- MW</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Current Demand</span>
+                <span class="metric-value" id="totalDemand">-- MW</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Reserve Capacity</span>
+                <span class="metric-value" id="reserveCapacity">-- MW</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Gas Storage</span>
+                <span class="metric-value" id="gasStorage">-- %</span>
+            </div>
+        </div>
+
+        <!-- Power Plants -->
+        <div class="card">
+            <h2>🏭 Power Plants</h2>
+            <div id="powerPlantsList">Loading...</div>
+        </div>
+
+        <!-- Weather Forecast Controls -->
+        <div class="card">
+            <h2>🌤️ Tomorrow's Weather Forecast</h2>
+
+            <div class="scenario-buttons">
+                <button class="scenario-btn" onclick="setScenario('sunny')" id="scenarioSunny">☀️ Sunny Day</button>
+                <button class="scenario-btn" onclick="setScenario('cloudy')" id="scenarioCloudy">☁️ Cloudy</button>
+                <button class="scenario-btn" onclick="setScenario('storm')" id="scenarioStorm">🌧️ Storm</button>
+                <button class="scenario-btn" onclick="setScenario('crisis')" id="scenarioCrisis">⚠️ Crisis</button>
+            </div>
+
+            <div class="weather-control">
+                <label>Solar Radiation (W/m²)</label>
+                <input type="range" id="insolation" min="0" max="1000" value="850" oninput="updateValue('insolation')">
+                <div class="value-display" id="insolationValue">850 W/m²</div>
+            </div>
+
+            <div class="weather-control">
+                <label>Wind Speed (m/s)</label>
+                <input type="range" id="windSpeed" min="0" max="25" value="12" step="0.5" oninput="updateValue('windSpeed')">
+                <div class="value-display" id="windSpeedValue">12.0 m/s</div>
+            </div>
+
+            <div class="weather-control">
+                <label>Gas Storage (%)</label>
+                <input type="range" id="gasStorageInput" min="0" max="100" value="85" oninput="updateValue('gasStorageInput')">
+                <div class="value-display" id="gasStorageInputValue">85 %</div>
+            </div>
+
+            <div class="weather-control">
+                <label>Grid Reserve (MW)</label>
+                <input type="range" id="gridReserve" min="0" max="500" value="400" oninput="updateValue('gridReserve')">
+                <div class="value-display" id="gridReserveValue">400 MW</div>
+            </div>
+
+            <div class="weather-control">
+                <label>French Import Price (€/MWh)</label>
+                <input type="range" id="frenchPrice" min="30" max="200" value="55" oninput="updateValue('frenchPrice')">
+                <div class="value-display" id="frenchPriceValue">55 €</div>
+            </div>
+        </div>
+
+        <!-- Prediction Panel -->
+        <div class="card prediction-panel">
+            <h2>🤖 Prediction Comparison: RPT vs Simple Average</h2>
+            <p style="color: var(--sap-color-neutral); margin-bottom: 1rem;">
+                Adjust the weather forecast above, then compare SAP RPT against simple statistical averaging.
+            </p>
+
+            <button class="btn btn-primary" id="predictBtn" onclick="requestComparison()">
+                Compare RPT vs Average
+            </button>
+
+            <!-- Comparison Results -->
+            <div class="prediction-result" id="comparisonResult" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+                    <!-- RPT Result -->
+                    <div style="padding: 1rem; background: rgba(10, 110, 209, 0.05); border-radius: 8px; border: 2px solid rgba(10, 110, 209, 0.2);">
+                        <h3 style="color: var(--sap-color-brand); margin-bottom: 0.75rem;">🤖 SAP RPT Prediction</h3>
+                        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;" id="rptDecision">--</div>
+                        <div style="font-size: 0.875rem; color: var(--sap-color-neutral); margin-bottom: 0.75rem;">
+                            Confidence: <strong id="rptConfidence">--%</strong> |
+                            Time: <span id="rptTime">--ms</span>
+                        </div>
+                        <div style="font-size: 0.85rem; padding: 0.75rem; background: white; border-radius: 4px; line-height: 1.5;" id="rptJustification">
+                            Justification...
+                        </div>
+                    </div>
+
+                    <!-- Simple Average Result -->
+                    <div style="padding: 1rem; background: rgba(106, 109, 112, 0.05); border-radius: 8px; border: 2px solid rgba(106, 109, 112, 0.2);">
+                        <h3 style="color: var(--sap-color-neutral); margin-bottom: 0.75rem;">📊 Simple Average</h3>
+                        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;" id="avgDecision">--</div>
+                        <div style="font-size: 0.875rem; color: var(--sap-color-neutral); margin-bottom: 0.75rem;">
+                            Based on: <strong id="avgRecords">--</strong> records |
+                            Time: <span id="avgTime">--ms</span>
+                        </div>
+                        <div style="font-size: 0.85rem; padding: 0.75rem; background: white; border-radius: 4px; line-height: 1.5;" id="avgLogic">
+                            Logic...
+                        </div>
+                        <div style="margin-top: 0.75rem; font-size: 0.875rem;">
+                            Std Deviation: <strong id="avgStdDev">--</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis -->
+                <div style="padding: 1.25rem; background: #fffbea; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-size: 1rem; margin: 0;">💡 Analysis</h4>
+                        <span style="font-weight: 700; color: #f59e0b; font-size: 0.9rem;" id="recommendation">--</span>
+                    </div>
+                    <div id="analysisNotes" style="font-size: 0.9rem; line-height: 1.6; color: #333;">
+                        Analysis...
+                    </div>
+                    <div style="margin-top: 0.75rem; font-size: 0.875rem; opacity: 0.8;">
+                        Predictions Match: <strong id="predictionsMatch">--</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/grid';
+        let weatherChart = null; // Store chart instance
+
+        // Load active dataset info
+        async function loadActiveDataset() {
+            try {
+                const response = await fetch(`${API_BASE}/getActiveDataset()`);
+                const data = await response.json();
+
+                document.getElementById('activeDatasetName').textContent = data.name || 'No dataset';
+                document.getElementById('variabilityScore').textContent = data.variabilityScore || '-';
+
+                // Update button states based on active dataset
+                updateDatasetButtons(data.name);
+
+                // Update scenario button labels based on dataset
+                updateScenarioLabels(data.name);
+
+                // Load and render weather chart
+                await loadWeatherChart();
+            } catch (error) {
+                console.error('Failed to load active dataset:', error);
+            }
+        }
+
+        // Load weather data and render chart
+        async function loadWeatherChart() {
+            try {
+                // Fetch all grid snapshots for the active dataset
+                const response = await fetch(`${API_BASE}/GridSnapshots?$orderby=timestamp&$top=365`);
+                const data = await response.json();
+
+                if (!data.value || data.value.length === 0) {
+                    console.log('No data available for chart');
+                    return;
+                }
+
+                const records = data.value;
+
+                // Prepare data for chart
+                const labels = records.map((r, idx) => `Day ${idx + 1}`);
+                const insolationData = records.map(r => parseFloat(r.forecastInsolation));
+                const windSpeedData = records.map(r => parseFloat(r.forecastWindSpeed) * 50); // Scale for visibility
+                const gasStorageData = records.map(r => parseFloat(r.gasStoragePct) * 10); // Scale for visibility
+
+                // Calculate statistics for display
+                const insolationMean = insolationData.reduce((a, b) => a + b, 0) / insolationData.length;
+                const insolationMin = Math.min(...insolationData);
+                const insolationMax = Math.max(...insolationData);
+
+                const windMean = windSpeedData.reduce((a, b) => a + b, 0) / windSpeedData.length / 50;
+                const windMin = Math.min(...windSpeedData) / 50;
+                const windMax = Math.max(...windSpeedData) / 50;
+
+                // Destroy existing chart if it exists
+                if (weatherChart) {
+                    weatherChart.destroy();
+                }
+
+                // Create chart
+                const ctx = document.getElementById('weatherChart').getContext('2d');
+                weatherChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Solar Radiation (W/m²)',
+                                data: insolationData,
+                                borderColor: '#ffc107',
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                tension: 0.1,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Wind Speed (m/s × 50)',
+                                data: windSpeedData,
+                                borderColor: '#2196f3',
+                                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                tension: 0.1,
+                                yAxisID: 'y'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: `Solar: ${insolationMin.toFixed(0)}-${insolationMax.toFixed(0)} W/m² (avg: ${insolationMean.toFixed(0)}) | Wind: ${windMin.toFixed(1)}-${windMax.toFixed(1)} m/s (avg: ${windMean.toFixed(1)})`,
+                                font: { size: 11 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (label.includes('Wind')) {
+                                            label += (context.parsed.y / 50).toFixed(1) + ' m/s';
+                                        } else {
+                                            label += context.parsed.y.toFixed(0) + ' W/m²';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Days (1-365)'
+                                },
+                                ticks: {
+                                    maxTicksLimit: 12,
+                                    callback: function(value, index) {
+                                        return index % 30 === 0 ? `Day ${index + 1}` : '';
+                                    }
+                                }
+                            },
+                            y: {
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Solar (W/m²) / Wind (m/s × 50)'
+                                },
+                                min: 0,
+                                max: 1000
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Failed to load weather chart:', error);
+            }
+        }
+
+        // Update scenario button labels based on active dataset
+        function updateScenarioLabels(activeDatasetName) {
+            const isCanary = activeDatasetName && activeDatasetName.includes('Canary');
+
+            if (isCanary) {
+                // Canary Islands: no real storms/crisis, but rare weather events
+                document.getElementById('scenarioStorm').innerHTML = '🌬️ Calima (Dust)';
+                document.getElementById('scenarioCrisis').innerHTML = '🌀 Rare Storm';
+            } else {
+                // Germany: actual storms and crisis
+                document.getElementById('scenarioStorm').innerHTML = '🌧️ Storm';
+                document.getElementById('scenarioCrisis').innerHTML = '⚠️ Crisis';
+            }
+        }
+
+        // Update dataset button states (disable active, enable inactive)
+        function updateDatasetButtons(activeDatasetName) {
+            const germanyBtn = document.getElementById('germanyBtn');
+            const canaryBtn = document.getElementById('canaryBtn');
+
+            // Restore original button text
+            germanyBtn.innerHTML = '🇩🇪 Germany (Variable)<br><span style="font-size: 0.8rem; opacity: 0.9;">Variability: 3.8/10</span>';
+            canaryBtn.innerHTML = '🇮🇨 Canary Islands (Stable)<br><span style="font-size: 0.8rem; opacity: 0.9;">Variability: 0.8/10</span>';
+
+            if (activeDatasetName && activeDatasetName.includes('Germany')) {
+                germanyBtn.disabled = true;
+                germanyBtn.style.opacity = '0.5';
+                germanyBtn.style.cursor = 'not-allowed';
+                canaryBtn.disabled = false;
+                canaryBtn.style.opacity = '1';
+                canaryBtn.style.cursor = 'pointer';
+            } else if (activeDatasetName && activeDatasetName.includes('Canary')) {
+                canaryBtn.disabled = true;
+                canaryBtn.style.opacity = '0.5';
+                canaryBtn.style.cursor = 'not-allowed';
+                germanyBtn.disabled = false;
+                germanyBtn.style.opacity = '1';
+                germanyBtn.style.cursor = 'pointer';
+            } else {
+                // No dataset active
+                germanyBtn.disabled = false;
+                germanyBtn.style.opacity = '1';
+                canaryBtn.disabled = false;
+                canaryBtn.style.opacity = '1';
+            }
+        }
+
+        // Activate dataset
+        async function activateDataset(preset) {
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+
+            // Show loading overlay
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('visible');
+
+            try {
+                // Add minimum 3 second delay for visual feedback
+                const [response] = await Promise.all([
+                    fetch(`${API_BASE}/activatePresetDataset`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ preset })
+                    }),
+                    new Promise(resolve => setTimeout(resolve, 3000)) // 3 second minimum delay
+                ]);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Hide loading overlay
+                overlay.classList.remove('visible');
+
+                // Reload active dataset info and chart
+                await loadActiveDataset();
+
+                // Reset to "Sunny Day" scenario for the new dataset
+                // Trigger click on the sunny day button programmatically
+                setTimeout(() => {
+                    document.getElementById('scenarioSunny').click();
+                }, 100);
+
+            } catch (error) {
+                console.error('Failed to activate dataset:', error);
+                overlay.classList.remove('visible');
+                alert('❌ Failed to activate dataset: ' + error.message);
+            }
+        }
+
+        // Update slider display values
+        function updateValue(id) {
+            const input = document.getElementById(id);
+            const display = document.getElementById(id + 'Value');
+            const value = parseFloat(input.value);
+
+            switch(id) {
+                case 'insolation':
+                    display.textContent = `${value} W/m²`;
+                    break;
+                case 'windSpeed':
+                    display.textContent = `${value.toFixed(1)} m/s`;
+                    break;
+                case 'gasStorageInput':
+                    display.textContent = `${value} %`;
+                    break;
+                case 'gridReserve':
+                    display.textContent = `${value} MW`;
+                    break;
+                case 'frenchPrice':
+                    display.textContent = `${value} €`;
+                    break;
+            }
+        }
+
+        // Preset scenarios (context-aware based on active dataset)
+        function setScenario(scenario) {
+            // Get active dataset name from header
+            const activeDataset = document.getElementById('activeDatasetName').textContent;
+            const isCanary = activeDataset.includes('Canary');
+
+            let scenarios;
+
+            if (isCanary) {
+                // Canary Islands scenarios (stable climate, no extremes)
+                scenarios = {
+                    sunny: { insolation: 820, windSpeed: 11, gasStorage: 78, reserve: 230, price: 70 },
+                    cloudy: { insolation: 720, windSpeed: 9, gasStorage: 75, reserve: 210, price: 75 },
+                    storm: { insolation: 450, windSpeed: 15, gasStorage: 72, reserve: 190, price: 85 },  // Rare calima/storm
+                    crisis: { insolation: 400, windSpeed: 16, gasStorage: 68, reserve: 180, price: 90 }  // Very rare event
+                };
+            } else {
+                // Germany scenarios (variable conditions, includes extremes)
+                scenarios = {
+                    sunny: { insolation: 850, windSpeed: 12, gasStorage: 85, reserve: 400, price: 55 },
+                    cloudy: { insolation: 400, windSpeed: 7, gasStorage: 65, reserve: 250, price: 75 },
+                    storm: { insolation: 120, windSpeed: 1.5, gasStorage: 42, reserve: 110, price: 112 },
+                    crisis: { insolation: 80, windSpeed: 1, gasStorage: 28, reserve: 80, price: 150 }
+                };
+            }
+
+            const s = scenarios[scenario];
+            document.getElementById('insolation').value = s.insolation;
+            document.getElementById('windSpeed').value = s.windSpeed;
+            document.getElementById('gasStorageInput').value = s.gasStorage;
+            document.getElementById('gridReserve').value = s.reserve;
+            document.getElementById('frenchPrice').value = s.price;
+
+            updateValue('insolation');
+            updateValue('windSpeed');
+            updateValue('gasStorageInput');
+            updateValue('gridReserve');
+            updateValue('frenchPrice');
+
+            // Update active state of scenario buttons
+            document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Load grid status
+        async function loadGridStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/getGridStatus()`);
+                const data = await response.json();
+
+                document.getElementById('totalGeneration').textContent = `${Math.round(data.totalGenerationMW)} MW`;
+                document.getElementById('totalDemand').textContent = `${Math.round(parseFloat(data.totalDemandMW))} MW`;
+                document.getElementById('reserveCapacity').textContent = `${Math.round(parseFloat(data.reserveCapacityMW))} MW`;
+
+                const gasStorage = parseFloat(data.gasStoragePct);
+                const gasEl = document.getElementById('gasStorage');
+                gasEl.textContent = `${gasStorage} %`;
+                gasEl.className = 'metric-value ' + (gasStorage < 30 ? 'critical' : gasStorage < 50 ? 'warning' : 'success');
+
+                const badge = document.getElementById('gridStatusBadge');
+                badge.textContent = `Grid: ${data.gridHealthStatus}`;
+                badge.style.background = data.gridHealthStatus === 'HEALTHY' ? 'rgba(16,126,62,0.3)' :
+                                         data.gridHealthStatus === 'WARNING' ? 'rgba(233,115,12,0.3)' : 'rgba(187,0,0,0.3)';
+            } catch (error) {
+                console.error('Failed to load grid status:', error);
+            }
+        }
+
+        // Load power plants
+        async function loadPowerPlants() {
+            try {
+                const response = await fetch(`${API_BASE}/PowerPlants`);
+                const data = await response.json();
+
+                const html = data.value.map(plant => {
+                    const output = parseFloat(plant.currentOutputMW);
+                    const capacity = parseFloat(plant.capacityMW);
+                    const pct = (output / capacity * 100).toFixed(0);
+                    const colorClass = plant.type.toLowerCase();
+                    const statusClass = plant.status.toLowerCase();
+
+                    return `
+                        <div class="metric">
+                            <div>
+                                <div style="font-weight: 500;">${plant.name}</div>
+                                <div style="font-size: 0.75rem; color: #999;">${plant.type} | ${capacity} MW capacity</div>
+                                <div class="power-bar">
+                                    <div class="power-bar-fill ${colorClass}" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="metric-value">${output} MW</div>
+                                <span class="plant-status ${statusClass}">${plant.status}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('powerPlantsList').innerHTML = html;
+            } catch (error) {
+                console.error('Failed to load power plants:', error);
+                document.getElementById('powerPlantsList').innerHTML = '<p>Failed to load</p>';
+            }
+        }
+
+        // Request comparison prediction
+        async function requestComparison() {
+            const btn = document.getElementById('predictBtn');
+            const resultDiv = document.getElementById('comparisonResult');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Comparing RPT vs Average...';
+
+            const payload = {
+                targetDate: new Date().toISOString().split('T')[0],
+                targetHour: 14,
+                forecastInsolation: parseFloat(document.getElementById('insolation').value),
+                forecastWindSpeed: parseFloat(document.getElementById('windSpeed').value),
+                gasStoragePct: parseFloat(document.getElementById('gasStorageInput').value),
+                gridReserveCapacityMW: parseFloat(document.getElementById('gridReserve').value),
+                frenchImportPriceEUR: parseFloat(document.getElementById('frenchPrice').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/requestComparisonPrediction`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Show results
+                resultDiv.style.display = 'block';
+
+                // RPT Results
+                document.getElementById('rptDecision').textContent = result.rptPrediction;
+                document.getElementById('rptConfidence').textContent = `${result.rptConfidence}%`;
+                document.getElementById('rptTime').textContent =
+                    result.rptResponseTimeMs === -1 ? 'SIMULATED' : `${result.rptResponseTimeMs}ms`;
+                document.getElementById('rptJustification').textContent = result.rptJustification;
+
+                // Average Results
+                document.getElementById('avgDecision').textContent = result.avgPrediction;
+                document.getElementById('avgRecords').textContent = result.avgBasedOnRecords;
+                document.getElementById('avgTime').textContent = `${result.avgCalculationTimeMs}ms`;
+                document.getElementById('avgLogic').textContent = result.avgLogic;
+                document.getElementById('avgStdDev').textContent =
+                    result.avgStdDeviation ? `±${result.avgStdDeviation.toFixed(1)} MW` : 'N/A';
+
+                // Analysis
+                document.getElementById('recommendation').textContent = result.recommendation;
+                document.getElementById('analysisNotes').textContent = result.analysisNotes;
+                document.getElementById('predictionsMatch').textContent =
+                    result.predictionsMatch ? '✅ Yes' : '❌ No';
+
+            } catch (error) {
+                console.error('Comparison failed:', error);
+                alert('❌ Comparison failed: ' + error.message);
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = 'Compare RPT vs Average';
+        }
+
+        // Initialize
+        loadActiveDataset();
+        loadGridStatus();
+        loadPowerPlants();
+
+        // Refresh status every 30 seconds
+        setInterval(loadGridStatus, 30000);
+    </script>
+</body>
+</html>

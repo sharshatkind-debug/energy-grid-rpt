@@ -1,0 +1,40 @@
+{
+  "name": "energy-grid-rpt",
+  "version": "1.0.0",
+  "description": "Energy Grid Management with SAP RPT Predictions",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/energy-grid-rpt.git"
+  },
+  "dependencies": {
+    "@sap/cds": "^10",
+    "@sap/xsenv": "^5",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "dev": "cds watch --port 4004",
+    "deploy": "cf push",
+    "test": "cds-serve --port 4004",
+    "generate-datasets": "node scripts/generate-datasets.js"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "kind": "sql"
+      }
+    },
+    "features": {
+      "fetch_csrf": false
+    }
+  },
+  "private": true,
+  "engines": {
+    "node": "^18 || ^20 || ^22"
+  }
+}

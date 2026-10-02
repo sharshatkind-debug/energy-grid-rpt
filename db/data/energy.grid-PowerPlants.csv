@@ -1,0 +1,6 @@
+ID;name;type;capacityMW;currentOutputMW;status;efficiency
+1;Solar Farm Alpha;SOLAR;150.00;120.00;ONLINE;80.00
+2;Solar Farm Beta;SOLAR;100.00;85.00;ONLINE;85.00
+3;Wind Park North;WIND;200.00;160.00;ONLINE;80.00
+4;Wind Park South;WIND;150.00;0.00;MAINTENANCE;0.00
+5;Gas Plant Central;GAS;500.00;100.00;ONLINE;75.00

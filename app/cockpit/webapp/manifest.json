@@ -1,0 +1,195 @@
+{
+    "_version": "1.65.0",
+    "sap.app": {
+        "id": "energy.grid.cockpit",
+        "type": "application",
+        "title": "Energy Grid Cockpit",
+        "description": "Monitor grid status and request RPT predictions",
+        "applicationVersion": {
+            "version": "1.0.0"
+        },
+        "dataSources": {
+            "mainService": {
+                "uri": "/grid/",
+                "type": "OData",
+                "settings": {
+                    "odataVersion": "4.0"
+                }
+            }
+        },
+        "crossNavigation": {
+            "inbounds": {
+                "intent1": {
+                    "signature": {
+                        "parameters": {},
+                        "additionalParameters": "allowed"
+                    },
+                    "semanticObject": "EnergyGrid",
+                    "action": "monitor"
+                }
+            }
+        }
+    },
+    "sap.ui5": {
+        "flexEnabled": true,
+        "dependencies": {
+            "minUI5Version": "1.120.0",
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {},
+                "sap.fe.templates": {}
+            }
+        },
+        "models": {
+            "": {
+                "dataSource": "mainService",
+                "preload": true,
+                "settings": {
+                    "synchronizationMode": "None",
+                    "operationMode": "Server",
+                    "autoExpandSelect": true,
+                    "earlyRequests": true
+                }
+            }
+        },
+        "routing": {
+            "routes": [
+                {
+                    "pattern": ":?query:",
+                    "name": "GridSnapshotsList",
+                    "target": "GridSnapshotsList"
+                },
+                {
+                    "pattern": "GridSnapshots({key}):?query:",
+                    "name": "GridSnapshotsObjectPage",
+                    "target": "GridSnapshotsObjectPage"
+                },
+                {
+                    "pattern": "PowerPlants:?query:",
+                    "name": "PowerPlantsList",
+                    "target": "PowerPlantsList"
+                },
+                {
+                    "pattern": "PowerPlants({key}):?query:",
+                    "name": "PowerPlantsObjectPage",
+                    "target": "PowerPlantsObjectPage"
+                },
+                {
+                    "pattern": "PredictionRequests:?query:",
+                    "name": "PredictionRequestsList",
+                    "target": "PredictionRequestsList"
+                },
+                {
+                    "pattern": "PredictionRequests({key}):?query:",
+                    "name": "PredictionRequestsObjectPage",
+                    "target": "PredictionRequestsObjectPage"
+                }
+            ],
+            "targets": {
+                "GridSnapshotsList": {
+                    "type": "Component",
+                    "id": "GridSnapshotsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/GridSnapshots",
+                            "variantManagement": "Page",
+                            "navigation": {
+                                "GridSnapshots": {
+                                    "detail": {
+                                        "route": "GridSnapshotsObjectPage"
+                                    }
+                                }
+                            },
+                            "initialLoad": "Enabled"
+                        }
+                    }
+                },
+                "GridSnapshotsObjectPage": {
+                    "type": "Component",
+                    "id": "GridSnapshotsObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/GridSnapshots",
+                            "editableHeaderContent": false
+                        }
+                    }
+                },
+                "PowerPlantsList": {
+                    "type": "Component",
+                    "id": "PowerPlantsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/PowerPlants",
+                            "variantManagement": "Page",
+                            "navigation": {
+                                "PowerPlants": {
+                                    "detail": {
+                                        "route": "PowerPlantsObjectPage"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "PowerPlantsObjectPage": {
+                    "type": "Component",
+                    "id": "PowerPlantsObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/PowerPlants",
+                            "editableHeaderContent": false
+                        }
+                    }
+                },
+                "PredictionRequestsList": {
+                    "type": "Component",
+                    "id": "PredictionRequestsList",
+                    "name": "sap.fe.templates.ListReport",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/PredictionRequests",
+                            "variantManagement": "Page",
+                            "navigation": {
+                                "PredictionRequests": {
+                                    "detail": {
+                                        "route": "PredictionRequestsObjectPage"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "PredictionRequestsObjectPage": {
+                    "type": "Component",
+                    "id": "PredictionRequestsObjectPage",
+                    "name": "sap.fe.templates.ObjectPage",
+                    "options": {
+                        "settings": {
+                            "contextPath": "/PredictionRequests",
+                            "editableHeaderContent": false
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "icons": {
+            "icon": "sap-icon://factory"
+        },
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    },
+    "sap.fiori": {
+        "registrationIds": [],
+        "archeType": "transactional"
+    }
+}
